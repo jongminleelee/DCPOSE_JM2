@@ -252,10 +252,10 @@ class HRNet(BaseModel):
             parameters = module.parameters()
             for parameter in parameters:
                 parameter.requires_grad = False
-            parameters = self.stage4.parameters()
+            parameters = self.stage4_2.parameters()
             for parameter in parameters:
                 parameter.requires_grad = True
-            parameters = self.final_layer.parameters()
+            parameters = self.final_layer_2.parameters()
             for parameter in parameters:
                 parameter.requires_grad = True
 
