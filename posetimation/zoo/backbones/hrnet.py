@@ -117,6 +117,17 @@ class HRNet(BaseModel):
             stride=1,
             padding=1 if extra.FINAL_CONV_KERNEL == 3 else 0
         )
+        
+        self.stage4_2, self.pre_stage_channels_2 = self._make_stage(
+            self.stage3_cfg, num_channels, multi_scale_output=False)
+
+        self.final_layer_2 = nn.Conv2d(
+            in_channels=self.pre_stage_channels_2[0],
+            out_channels=cfg.MODEL.NUM_JOINTS,
+            kernel_size=extra.FINAL_CONV_KERNEL,
+            stride=1,
+            padding=1 if extra.FINAL_CONV_KERNEL == 3 else 0
+        )        
 
     def forward(self, x, **kwargs):
 
@@ -175,7 +186,7 @@ class HRNet(BaseModel):
         if self.use_deconv:
             return y_list[0], rough_pose_heatmaps
         else:
-            return rough_pose_heatmaps, stage3_outputs
+            return rough_pose_heatmaps, stage3_outputs[0], stage3_outputs[1], stage3_outputs[2], stage3_outputs[3]
 
     def stage123_forward(self, x, **kwargs):
         x = self.conv1(x)
@@ -228,9 +239,9 @@ class HRNet(BaseModel):
         return x3_list[0], x3_list[1], x3_list[2], x3_list[3]
 
     def stage4_forward(self, x3_list, **kwargs):
-        y_list = self.stage4(x3_list)
+        y_list = self.stage4_2(x3_list)
         final_input = y_list[0]
-        rough_pose_heatmaps = self.final_layer(final_input)
+        rough_pose_heatmaps = self.final_layer_2(final_input)
         if self.use_deconv:
             return y_list[0], rough_pose_heatmaps
         else:

@@ -16,4 +16,5 @@
 /output14
 /DataSet
 /pretrained_posetrack_stage4.pth
+/epoch_1_state_800128.pth
 .idea

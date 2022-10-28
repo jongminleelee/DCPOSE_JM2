@@ -1,5 +1,5 @@
-WORKERS: 6
-PRINT_FREQ: 100
+WORKERS: 16
+PRINT_FREQ: 50
 DISTANCE: 3
 
 DATASET:
@@ -21,8 +21,10 @@ MODEL:
 
   NUM_JOINTS: 17
   #PRETRAINED: "./DcPose_supp_files/pretrained_models/pretrained_.pth"
+  #PRETRAINED: "./DcPose_supp_files/pretrained_models/epoch_1_state_800128.pth"
   #PRETRAINED: "./DcPose_supp_files/pretrained_models/pretrained_coco_model.pth"
-  PRETRAINED: "./epoch_17_state.pth"
+  PRETRAINED: "./DataSet/PoseTrack2018/epoch_1_state_800128.pth"
+  #PRETRAINED: "./epoch_1_state_800128.pth"
   TARGET_TYPE: gaussian
   IMAGE_SIZE:
     - 288
@@ -96,7 +98,7 @@ TRAIN:
   BEGIN_EPOCH: 0
   END_EPOCH: 40
   OPTIMIZER: adam
-  LR: 0.00001
+  LR: 0.001
   LR_FACTOR: 0.1
   MILESTONES:
     - 4

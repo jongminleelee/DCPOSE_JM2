@@ -197,7 +197,7 @@ class DcPose_RSN(BaseModel):
 
         hrnet_motion_outputs = self.rough_pose_estimation_net.stage4_forward(stage4_2_input)
 
-        pre_motion_heatmap, next_motion_heatmap = hrnet_motion_outputs.split(2, dim=0)
+        pre_motion_heatmap, next_motion_heatmap = hrnet_motion_outputs.split(true_batch_size, dim=0)
 
         prev_next_heatmaps = torch.cat([pre_motion_heatmap, next_motion_heatmap], dim=1)
 
@@ -262,7 +262,7 @@ class DcPose_RSN(BaseModel):
         if not self.freeze_hrnet_weights:
             return current_rough_heatmaps, output_heatmaps
         else:
-            return output_heatmaps, hrnet_motion_outputs, support_heatmaps, prev_heatmaps, next_heatmaps
+            return output_heatmaps, current_rough_heatmaps,pre_motion_heatmap, next_motion_heatmap 
 
     def init_weights(self):
         logger = logging.getLogger(__name__)
