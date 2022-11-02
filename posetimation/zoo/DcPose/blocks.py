@@ -206,12 +206,12 @@ class FlowLayer(nn.Module):
             del u2y
 
         # flow = torch.cat([u1, u2], dim=1)
-        flow = u1*u1+u2*u2
-        flow = torch.sqrt(flow)
-        flow = self.bn(flow)
-        flow = self.relu(flow)
+        # flow = u1*u1+u2*u2
+        # flow = torch.sqrt(flow)
+        # flow = self.bn(flow)
+        # flow = self.relu(flow)
 
-        return flow
+        return u1,u2
         # 조인트별로 x방향과 y방향 motion estimator이다.
         # bath, channel
 class MaskedConv1D(nn.Module):

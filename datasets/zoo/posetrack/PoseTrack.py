@@ -106,14 +106,14 @@ class PoseTrack(VideoDataset):
         num_frames = data_item['nframes']
         data_numpy = read_image(image_file_path)
 
-        prev_optical_root_path = "/mnt/prj/inpyosong/posetrack2018/posetrack2018_opt_cp2"
-        next_optical_root_path = "/mnt/prj/inpyosong/posetrack2018/posetrack2018_opt_cn2"
-        prev_2_optical_root_path = "/mnt/prj/inpyosong/posetrack2018/posetrack2018_opt_cp"
-        next_2_optical_root_path = "/mnt/prj/inpyosong/posetrack2018/posetrack2018_opt_cn"
-        #prev_2_optical_root_path = "/home/dataset/posetrack/posetrack2018_opt_cp"
-        #next_2_optical_root_path = "/home/dataset/posetrack/posetrack2018_opt_cn"
-        #prev_optical_root_path = "/home/dataset/posetrack/posetrack2018_opt_cp2"
-        #next_optical_root_path = "/home/dataset/posetrack/posetrack2018_opt_cn2"
+        #prev_optical_root_path = "/mnt/prj/inpyosong/posetrack2018/posetrack2018_opt_cp2"
+        #next_optical_root_path = "/mnt/prj/inpyosong/posetrack2018/posetrack2018_opt_cn2"
+        #prev_2_optical_root_path = "/mnt/prj/inpyosong/posetrack2018/posetrack2018_opt_cp"
+        #next_2_optical_root_path = "/mnt/prj/inpyosong/posetrack2018/posetrack2018_opt_cn"
+        prev_2_optical_root_path = "/home/dataset/posetrack/posetrack2018_opt_cp"
+        next_2_optical_root_path = "/home/dataset/posetrack/posetrack2018_opt_cn"
+        prev_optical_root_path = "/home/dataset/posetrack/posetrack2018_opt_cp2"
+        next_optical_root_path = "/home/dataset/posetrack/posetrack2018_opt_cn2"
 
         if self.train:
             origin_path = image_file_path
@@ -295,7 +295,7 @@ class PoseTrack(VideoDataset):
                 joints, joints_vis = fliplr_joints(
                     joints, joints_vis, data_numpy.shape[1], self.flip_pairs)
                 center[0] = data_numpy.shape[1] - center[0] - 1
-
+            '''
             if random.random() <= 0.5:
                 data_numpy = (T.GaussianBlur(kernel_size=(5, 9),
                                              sigma=(0.1, 5))(torch.from_numpy(data_numpy.copy()))).numpy()
@@ -309,7 +309,7 @@ class PoseTrack(VideoDataset):
                 data_numpy_next_2 = (T.GaussianBlur(kernel_size=(5, 9),
                                                    sigma=(0.1, 5))(
                     torch.from_numpy(data_numpy_next_2.copy()))).numpy()
-
+        
             if random.random() <= 0.3:
                 data_numpy = torch.from_numpy(data_numpy.copy()).permute(2, 0, 1)
                 data_numpy_prev = torch.from_numpy(data_numpy_prev.copy()).permute(2, 0, 1)
@@ -328,7 +328,7 @@ class PoseTrack(VideoDataset):
                 data_numpy_next = data_numpy_next.transpose(1, 2, 0)
                 data_numpy_prev_2 = data_numpy_prev_2.transpose(1, 2, 0)
                 data_numpy_next_2 = data_numpy_next_2.transpose(1, 2, 0)
-
+            '''
         # calculate transform matrix
         trans = get_affine_transform(center, scale, r, self.image_size)
         input_x = cv2.warpAffine(data_numpy, trans, (int(self.image_size[0]), int(self.image_size[1])), flags=cv2.INTER_LINEAR)

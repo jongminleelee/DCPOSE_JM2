@@ -101,17 +101,17 @@ class CommonFunction(BaseFunction):
 
                 currnet_rough_heatmaps = outputs[1]
                 pre_motion_heatmap = outputs[2]
-                next_motion_heatmap = outputs[3]
+                #next_motion_heatmap = outputs[3]
                 
-                pre_motion_loss = self.criterion(pre_motion_heatmap, prev2_target_motion_heatmaps, target_heatmaps_weight)
-                next_motion_loss = self.criterion(next_motion_heatmap, next2_target_motion_heatmaps, target_heatmaps_weight)
+                #pre_motion_loss = self.criterion(pre_motion_heatmap, prev2_target_motion_heatmaps, target_heatmaps_weight)
+                #next_motion_loss = self.criterion(next_motion_heatmap, next2_target_motion_heatmaps, target_heatmaps_weight)
                 #current_loss = self.criterion(current_heatmaps, target_heatmaps, target_heatmaps_weight)
                 #prev_loss = self.criterion(prev_heatmaps, prev_target_motion_heatmaps, target_heatmaps_weight)
                 #prev2_loss = self.criterion(prev2_heatmaps, prev2_target_motion_heatmaps, target_heatmaps_weight)
                 #next_loss = self.criterion(next_heatmaps, next_target_motion_heatmaps, target_heatmaps_weight)
                 #next2_loss = self.criterion(next2_heatmaps, next2_target_motion_heatmaps, target_heatmaps_weight)
                
-                loss = pred_loss + pre_motion_loss + next_motion_loss
+                loss = pred_loss # + pre_motion_loss + next_motion_loss
                 
                 # for pred_heatmaps in outputs[1:]:
                 #     loss += self.criterion(pred_heatmaps, target_heatmaps, target_heatmaps_weight)
@@ -132,13 +132,13 @@ class CommonFunction(BaseFunction):
             
             _, avg_acc2, cnt2, _ = accuracy(currnet_rough_heatmaps.detach().cpu().numpy(), target_heatmaps.detach().cpu().numpy())
             acc2.update(avg_acc2, cnt2)
-
-            _, avg_acc3, cnt3, _ = accuracy(pre_motion_heatmap.detach().cpu().numpy(), prev2_target_motion_heatmaps.detach().cpu().numpy())
-            acc3.update(avg_acc3, cnt3)
             
+            _, avg_acc3, cnt3, _ = accuracy(pre_motion_heatmap.detach().cpu().numpy(), target_heatmaps.detach().cpu().numpy())
+            acc3.update(avg_acc3, cnt3)
+            '''
             _, avg_acc4, cnt4, _ = accuracy(next_motion_heatmap.detach().cpu().numpy(), next2_target_motion_heatmaps.detach().cpu().numpy())
             acc4.update(avg_acc4, cnt4)
-
+            '''
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
@@ -149,12 +149,14 @@ class CommonFunction(BaseFunction):
                       'Speed {speed:.1f} samples/s\t' \
                       'Data {data_time.val:.3f}s ({data_time.avg:.3f}s)\t' \
                       'Loss {loss.val:.5f} ({loss.avg:.5f})\t' \
-                      'final_acc {acc.val:.3f} ({acc.avg:.3f})\t'\
+                      'pre_final_acc {acc.val:.3f} ({acc.avg:.3f})\t'\
                       'c_acc {acc2.val:.3f} ({acc2.avg:.3f})\t'\
-                      'pre_motion {acc3.val:.3f} ({acc3.avg:.3f})\t'\
-                      'next_motion {acc4.val:.3f} ({acc4.avg:.3f})\t'.format(epoch, iter_step, self.max_iter_num, batch_time=batch_time,
+                      'pre_acc {acc3.val:.3f} ({acc3.avg:.3f})\t'.format(epoch, iter_step, self.max_iter_num, batch_time=batch_time,
                                                                         speed=input_x.size(0) / batch_time.val,
-                                                                        data_time=data_time, loss=losses, acc=acc, acc2=acc2,acc3=acc3, acc4=acc4)
+                                                                        data_time=data_time, loss=losses, acc=acc, acc2=acc2, acc3=acc3)
+                      #
+                      #'next_motion {acc4.val:.3f} ({acc4.avg:.3f})\t'\
+
 
                 logger.info(msg)
 

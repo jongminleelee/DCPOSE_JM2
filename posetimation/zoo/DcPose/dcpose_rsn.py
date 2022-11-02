@@ -127,12 +127,55 @@ class DcPose_RSN(BaseModel):
         # self.modulated_deform_conv_list2 = nn.ModuleList(self.modulated_deform_conv_list2)
         # self.modulated_deform_conv_list3 = nn.ModuleList(self.modulated_deform_conv_list3)
 
-        #self.motion_layer_48 = FlowLayer(48, self.batch_size, 20)
+        self.motion_layer_48 = FlowLayer(48, self.batch_size, 20)
         self.motion_layer_96 = FlowLayer(96, self.batch_size, 20)
         self.motion_layer_192 = FlowLayer(192, self.batch_size, 20)
+        self.motion_layer_384 = FlowLayer(384, self.batch_size, 20)
 
         #self.past_output_layer = CHAIN_RSB_BLOCKS(self.num_joints * 3, self.num_joints, 1)
         #self.next_output_layer = CHAIN_RSB_BLOCKS(self.num_joints * 3, self.num_joints, 1)
+
+    def warp(self, x, flo):
+        """
+        warp an image/tensor (im2) back to im1, according to the optical flow
+        x: [B, C, H, W] (im2)
+        flo: [B, 2, H, W] flow
+        """
+        B, C, H, W = x.size()
+        # mesh grid 
+        xx = torch.arange(0, W).view(1,-1).repeat(H,1)
+        yy = torch.arange(0, H).view(-1,1).repeat(1,W)
+        xx = xx.view(1,1,H,W).repeat(B,1,1,1)
+        yy = yy.view(1,1,H,W).repeat(B,1,1,1)
+        grid = torch.cat((xx,yy),1).float()
+        
+        #print(gird)
+
+        if x.is_cuda:
+            grid = grid.cuda()
+        vgrid = grid + flo
+        
+        #print(flo)
+
+        # scale grid to [-1,1] 
+        vgrid[:,0,:,:] = 2.0*vgrid[:,0,:,:].clone() / max(W-1,1)-1.0
+        vgrid[:,1,:,:] = 2.0*vgrid[:,1,:,:].clone() / max(H-1,1)-1.0
+
+        vgrid = vgrid.permute(0,2,3,1)        
+        output = nn.functional.grid_sample(x, vgrid, align_corners=False)
+        mask = (torch.ones(x.size())).cuda()
+        mask = nn.functional.grid_sample(mask, vgrid, align_corners=False)
+
+        # if W==128:
+            # np.save('mask.npy', mask.cpu().data.numpy())
+            # np.save('warp.npy', output.cpu().data.numpy())
+        
+        #mask[mask<0.5] = 0
+        #mask[mask>0] = 1
+        
+        #return output*mask
+        return output
+
 
     def _offset_conv(self, nc, kh, kw, dd, dg):
         conv = nn.Conv2d(nc, dg * 2 * kh * kw, kernel_size=(3, 3), stride=(1, 1), dilation=(dd, dd),
@@ -176,29 +219,81 @@ class DcPose_RSN(BaseModel):
         current_hrnet_feature1, previous_hrnet_feature1, next_hrnet_feature1, previous2_hrnet_feature1, next2_hrnet_feature1 = feature1.split(true_batch_size, dim=0)
         current_hrnet_feature2, previous_hrnet_feature2, next_hrnet_feature2, previous2_hrnet_feature2, next2_hrnet_feature2 = feature2.split(true_batch_size, dim=0)
         current_hrnet_feature3, previous_hrnet_feature3, next_hrnet_feature3, previous2_hrnet_feature3, next2_hrnet_feature3 = feature3.split(true_batch_size, dim=0)
+        current_hrnet_feature4, previous_hrnet_feature4, next_hrnet_feature4, previous2_hrnet_feature4, next2_hrnet_feature4 = feature4.split(true_batch_size, dim=0)
 
         # motion_module_flowlayer
         # [b, 48, 96, 72] == [b, 48, h, w]
         with torch.no_grad():
-            pc = self.motion_layer_96(current_hrnet_feature2, previous2_hrnet_feature2)
-            nc = self.motion_layer_96(current_hrnet_feature2, next2_hrnet_feature2)
-            p2c = self.motion_layer_192(current_hrnet_feature3, previous2_hrnet_feature3)
-            n2c = self.motion_layer_192(current_hrnet_feature3, next2_hrnet_feature3)
+        # u1, u2 형태로 값이 나오도록 수정
+        # 현재 -> 미래 or 현재 -> 과거가 아니라
+        # 과거 -> 현재 or 미래 -> 현재 형태로 수정을 함. 
+            pc_u1_1,pc_u2_1 = self.motion_layer_48(previous_hrnet_feature1, current_hrnet_feature1)
+            #nc_u1,nc_u2 = self.motion_layer_48(next2_hrnet_feature1, current_hrnet_feature1)
+            #p2c_u1_1,p2c_u2_1 = self.motion_layer_48(previous2_hrnet_feature1, current_hrnet_feature1)
+            #n2c_u1,n2c_u2 = self.motion_layer_48(next2_hrnet_feature1, current_hrnet_feature1)
+        
+            print(pc_u1_1)
+            print("==============================")
+            print(pc_u2_1)
+            print("==============================")
+            
+            pc_u1_2,pc_u2_2 = self.motion_layer_96(previous_hrnet_feature2, current_hrnet_feature2)
+            #nc_u1,nc_u2 = self.motion_layer_96(next2_hrnet_feature2, current_hrnet_feature2)
+            #p2c_u1_2,p2c_u2_2 = self.motion_layer_96(previous2_hrnet_feature2, current_hrnet_feature2)
+            #n2c_u1,n2c_u2 = self.motion_layer_96(next2_hrnet_feature2, current_hrnet_feature2)
+            
+            
+            pc_u1_3,pc_u2_3 = self.motion_layer_192(previous_hrnet_feature3, current_hrnet_feature3)
+            #nc_u1,nc_u2 = self.motion_layer_192(next2_hrnet_feature3, current_hrnet_feature3)
+            #p2c_u1_3,p2c_u2_3 = self.motion_layer_192(previous2_hrnet_feature3, current_hrnet_feature3)
+            #n2c_u1,n2c_u2 = self.motion_layer_192(next2_hrnet_feature3, current_hrnet_feature3)    
+            
+            pc_u1_4,pc_u2_4 = self.motion_layer_384(previous_hrnet_feature4, current_hrnet_feature4)        
 
-        # create hrnet_stage4_input
-        input_feature1 = torch.cat([current_hrnet_feature1, current_hrnet_feature1], dim=0)
-        input_feature2 = torch.cat([previous_hrnet_feature2+pc, next_hrnet_feature2+nc], dim=0)
-        input_feature3 = torch.cat([previous2_hrnet_feature3+p2c, next2_hrnet_feature3+n2c], dim=0)
+        # ===========================================================================================================================================================
+            input_feature1 = []
+            for output1,output2,output3 in zip(previous_hrnet_feature1.split(1, dim=1),pc_u1_1.split(1, dim=1),pc_u2_1.split(1, dim=1)):
+                flo = torch.cat([output2,output3],dim=1)
+                temp = self.warp(output1,flo)
+                input_feature1.append(temp)
+            
+            input_feature1 = torch.cat(input_feature1,dim=1)
+    
+            input_feature2 = []
+            for output1,output2,output3 in zip(previous_hrnet_feature2.split(1, dim=1),pc_u1_2.split(1, dim=1),pc_u2_2.split(1, dim=1)):
+                flo2 = torch.cat([output2,output3],dim=1)
+                temp2 = self.warp(output1,flo2)
+                input_feature2.append(temp2)
+            
+            input_feature2 = torch.cat(input_feature2,dim=1)
+            
+            input_feature3 = []
+            for output1,output2,output3 in zip(previous_hrnet_feature3.split(1, dim=1),pc_u1_3.split(1, dim=1),pc_u2_3.split(1, dim=1)):
+                flo3 = torch.cat([output2,output3],dim=1)
+                temp3 = self.warp(output1,flo3)
+                input_feature3.append(temp3)
+            
+            input_feature3 = torch.cat(input_feature3,dim=1)     
+            
+            input_feature4 = []
+            for output1,output2,output3 in zip(previous_hrnet_feature4.split(1, dim=1),pc_u1_4.split(1, dim=1),pc_u2_4.split(1, dim=1)):
+                flo4 = torch.cat([output2,output3],dim=1)
+                temp4 = self.warp(output1,flo4)
+                input_feature4.append(temp4)
+            
+            input_feature4 = torch.cat(input_feature4,dim=1)                     
+                   
+
 
         stage4_2_input = []
         stage4_2_input.append(input_feature1)
-        stage4_2_input.append(input_feature2*0.5)
-        stage4_2_input.append(input_feature3*0.25)
+        stage4_2_input.append(input_feature2)
+        stage4_2_input.append(input_feature3)
+        stage4_2_input.append(input_feature4)
 
-        hrnet_motion_outputs = self.rough_pose_estimation_net.stage4_forward(stage4_2_input)
+        pre1_motion_heatmap = self.rough_pose_estimation_net.stage4_forward(stage4_2_input)
 
-        pre_motion_heatmap, next_motion_heatmap = hrnet_motion_outputs.split(true_batch_size, dim=0)
-
+        '''
         prev_next_heatmaps = torch.cat([pre_motion_heatmap, next_motion_heatmap], dim=1)
 
         # hrnet + posetrack2018기반으로 fintuning pretrained된 값을 사용 
@@ -263,6 +358,8 @@ class DcPose_RSN(BaseModel):
             return current_rough_heatmaps, output_heatmaps
         else:
             return output_heatmaps, current_rough_heatmaps,pre_motion_heatmap, next_motion_heatmap 
+        '''
+        return pre1_motion_heatmap, current_rough_heatmaps, previous_rough_heatmaps
 
     def init_weights(self):
         logger = logging.getLogger(__name__)

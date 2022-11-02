@@ -239,6 +239,15 @@ class HRNet(BaseModel):
         return x3_list[0], x3_list[1], x3_list[2], x3_list[3]
 
     def stage4_forward(self, x3_list, **kwargs):
+        y_list = self.stage4(x3_list)
+        final_input = y_list[0]
+        rough_pose_heatmaps = self.final_layer(final_input)
+        if self.use_deconv:
+            return y_list[0], rough_pose_heatmaps
+        else:
+            return rough_pose_heatmaps
+
+    def stage4_2_forward(self, x3_list, **kwargs):
         y_list = self.stage4_2(x3_list)
         final_input = y_list[0]
         rough_pose_heatmaps = self.final_layer_2(final_input)
@@ -252,10 +261,10 @@ class HRNet(BaseModel):
             parameters = module.parameters()
             for parameter in parameters:
                 parameter.requires_grad = False
-            parameters = self.stage4_2.parameters()
+            parameters = self.stage4.parameters()
             for parameter in parameters:
                 parameter.requires_grad = True
-            parameters = self.final_layer_2.parameters()
+            parameters = self.final_layer.parameters()
             for parameter in parameters:
                 parameter.requires_grad = True
 
