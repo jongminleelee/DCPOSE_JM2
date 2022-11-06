@@ -23,8 +23,8 @@ MODEL:
   #PRETRAINED: "./DcPose_supp_files/pretrained_models/pretrained_.pth"
   #PRETRAINED: "./DcPose_supp_files/pretrained_models/epoch_1_state_800128.pth"
   #PRETRAINED: "./DcPose_supp_files/pretrained_models/pretrained_coco_model.pth"
-  #PRETRAINED: "./DataSet/PoseTrack2018/epoch_1_state_800128.pth"
-  PRETRAINED: "./epoch_1_state_800128.pth"
+  PRETRAINED: "./DataSet/PoseTrack2018/epoch_1_state_800128.pth"
+  #PRETRAINED: "./epoch_1_state_800128.pth"
   TARGET_TYPE: gaussian
   IMAGE_SIZE:
     - 288
