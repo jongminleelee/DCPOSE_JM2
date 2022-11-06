@@ -322,7 +322,7 @@ class DcPose_RSN(BaseModel):
             ratio = (2/3)**(1/2)
             
             input_feature3 = []
-            for temp_m,output1,output2,output3 in zip(pn_mask_3.split(1, dim=1),previous_hrnet_feature3.split(1, dim=1),pc_u1_3.split(1, dim=1),pc_u2_3.split(1, dim=1)):
+            for temp_m,output1,output2,output3 in zip(pn_mask_3.split(1, dim=1),previous2_hrnet_feature3.split(1, dim=1),pc_u1_3.split(1, dim=1),pc_u2_3.split(1, dim=1)):
                 flo3 = torch.cat([ratio*output2*temp_m,ratio*output3*temp_m],dim=1)
                 temp3 = self.warp(output1*temp_m,flo3)
                 input_feature3.append(temp3)
@@ -335,7 +335,7 @@ class DcPose_RSN(BaseModel):
             ratio = (1/2)**(1/2)
             
             input_feature4 = []
-            for temp_m,output1,output2,output3 in zip(pn_mask_4.split(1, dim=1),previous_hrnet_feature4.split(1, dim=1),pc_u1_4.split(1, dim=1),pc_u2_4.split(1, dim=1)):
+            for temp_m,output1,output2,output3 in zip(pn_mask_4.split(1, dim=1),previous2_hrnet_feature4.split(1, dim=1),pc_u1_4.split(1, dim=1),pc_u2_4.split(1, dim=1)):
                 flo4 = torch.cat([ratio*output2*temp_m,ratio*output3*temp_m],dim=1)
                 temp4 = self.warp(output1*temp_m,flo4)
                 input_feature4.append(temp4)
