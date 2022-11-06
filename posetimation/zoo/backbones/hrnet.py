@@ -119,7 +119,7 @@ class HRNet(BaseModel):
         )
         
         self.stage4_2, self.pre_stage_channels_2 = self._make_stage(
-            self.stage3_cfg, num_channels, multi_scale_output=False)
+            self.stage4_cfg, num_channels, multi_scale_output=False)
 
         self.final_layer_2 = nn.Conv2d(
             in_channels=self.pre_stage_channels_2[0],
@@ -261,10 +261,10 @@ class HRNet(BaseModel):
             parameters = module.parameters()
             for parameter in parameters:
                 parameter.requires_grad = False
-            parameters = self.stage4.parameters()
+            parameters = self.stage4_2.parameters()
             for parameter in parameters:
                 parameter.requires_grad = True
-            parameters = self.final_layer.parameters()
+            parameters = self.final_layer_2.parameters()
             for parameter in parameters:
                 parameter.requires_grad = True
 

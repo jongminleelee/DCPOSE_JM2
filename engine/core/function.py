@@ -327,7 +327,7 @@ class CommonFunction(BaseFunction):
                         self._running_val_iter(vis_dict=vis_dict, model_input=[input_x, input_sup_A, input_sup_B])
 
                 if isinstance(outputs, list) or isinstance(outputs, tuple):
-                    pred_heatmaps = outputs[0]
+                    pred_heatmaps = 0.5*outputs[0]+0.5*outputs[1]
                 else:
                     pred_heatmaps = outputs
 

@@ -131,6 +131,13 @@ class DcPose_RSN(BaseModel):
         self.motion_layer_96 = FlowLayer(96, self.batch_size, 20)
         self.motion_layer_192 = FlowLayer(192, self.batch_size, 20)
         self.motion_layer_384 = FlowLayer(384, self.batch_size, 20)
+        
+        BN_MOMENTUM = 0.1
+        
+        self.bn_1 = nn.BatchNorm2d(48, momentum=BN_MOMENTUM)
+        self.bn_2 = nn.BatchNorm2d(96, momentum=BN_MOMENTUM)
+        self.bn_3 = nn.BatchNorm2d(192, momentum=BN_MOMENTUM)
+        self.bn_4 = nn.BatchNorm2d(384, momentum=BN_MOMENTUM)
 
         #self.past_output_layer = CHAIN_RSB_BLOCKS(self.num_joints * 3, self.num_joints, 1)
         #self.next_output_layer = CHAIN_RSB_BLOCKS(self.num_joints * 3, self.num_joints, 1)
@@ -227,61 +234,115 @@ class DcPose_RSN(BaseModel):
         # u1, u2 형태로 값이 나오도록 수정
         # 현재 -> 미래 or 현재 -> 과거가 아니라
         # 과거 -> 현재 or 미래 -> 현재 형태로 수정을 함. 
-            pc_u1_1,pc_u2_1 = self.motion_layer_48(previous_hrnet_feature1, current_hrnet_feature1)
+            
+            # 과거1 -> 미래1
+            # ratio 1/2 
+            
+            pc_u1_1,pc_u2_1 = self.motion_layer_48(previous_hrnet_feature1, next_hrnet_feature1)
             #nc_u1,nc_u2 = self.motion_layer_48(next2_hrnet_feature1, current_hrnet_feature1)
             #p2c_u1_1,p2c_u2_1 = self.motion_layer_48(previous2_hrnet_feature1, current_hrnet_feature1)
             #n2c_u1,n2c_u2 = self.motion_layer_48(next2_hrnet_feature1, current_hrnet_feature1)
         
-            print(pc_u1_1)
-            print("==============================")
-            print(pc_u2_1)
-            print("==============================")
+            temp_mag= torch.sqrt(pc_u1_1*pc_u1_1+pc_u2_1*pc_u2_1)
+            temp_mask = temp_mag<0.5
             
-            pc_u1_2,pc_u2_2 = self.motion_layer_96(previous_hrnet_feature2, current_hrnet_feature2)
+            pn_mask_1 = (torch.ones(temp_mag.size())).cuda()
+            pn_mask_1[temp_mask] = 0
+            
+            # 과거1 -> 미래2 
+            # ratio 1/3         
+            
+            pc_u1_2,pc_u2_2 = self.motion_layer_96(previous_hrnet_feature2, next2_hrnet_feature2)
             #nc_u1,nc_u2 = self.motion_layer_96(next2_hrnet_feature2, current_hrnet_feature2)
             #p2c_u1_2,p2c_u2_2 = self.motion_layer_96(previous2_hrnet_feature2, current_hrnet_feature2)
             #n2c_u1,n2c_u2 = self.motion_layer_96(next2_hrnet_feature2, current_hrnet_feature2)
+
+            temp_mag= torch.sqrt(pc_u1_2*pc_u1_2+pc_u2_2*pc_u2_2)
+            temp_mask = temp_mag<0.5
+            
+            pn_mask_2 = (torch.ones(temp_mag.size())).cuda()
+            pn_mask_2[temp_mask] = 0            
             
             
-            pc_u1_3,pc_u2_3 = self.motion_layer_192(previous_hrnet_feature3, current_hrnet_feature3)
+            # 과거2 -> 미래1 
+            # ratio 2/3 
+            
+            pc_u1_3,pc_u2_3 = self.motion_layer_192(previous2_hrnet_feature3, next_hrnet_feature3)
             #nc_u1,nc_u2 = self.motion_layer_192(next2_hrnet_feature3, current_hrnet_feature3)
             #p2c_u1_3,p2c_u2_3 = self.motion_layer_192(previous2_hrnet_feature3, current_hrnet_feature3)
             #n2c_u1,n2c_u2 = self.motion_layer_192(next2_hrnet_feature3, current_hrnet_feature3)    
             
-            pc_u1_4,pc_u2_4 = self.motion_layer_384(previous_hrnet_feature4, current_hrnet_feature4)        
+            temp_mag= torch.sqrt(pc_u1_3*pc_u1_3+pc_u2_3*pc_u2_3)
+            temp_mask = temp_mag<0.5
+            
+            pn_mask_3 = (torch.ones(temp_mag.size())).cuda()
+            pn_mask_3[temp_mask] = 0   
+            
+            
+            # 과거2 -> 미래2 
+            # ratio 1/2 
+            
+            pc_u1_4,pc_u2_4 = self.motion_layer_384(previous2_hrnet_feature4, next2_hrnet_feature4)        
+            
+            temp_mag= torch.sqrt(pc_u1_4*pc_u1_4+pc_u2_4*pc_u2_4)
+            temp_mask = temp_mag<0.5
+            
+            pn_mask_4 = (torch.ones(temp_mag.size())).cuda()
+            pn_mask_4[temp_mask] = 0   
 
         # ===========================================================================================================================================================
+            
+             # 과거1 -> 미래1
+            ratio = (1/2)**(1/2)
+            
             input_feature1 = []
-            for output1,output2,output3 in zip(previous_hrnet_feature1.split(1, dim=1),pc_u1_1.split(1, dim=1),pc_u2_1.split(1, dim=1)):
-                flo = torch.cat([output2,output3],dim=1)
-                temp = self.warp(output1,flo)
+            for temp_m,output1,output2,output3 in zip(pn_mask_1.split(1, dim=1),previous_hrnet_feature1.split(1, dim=1),pc_u1_1.split(1, dim=1),pc_u2_1.split(1, dim=1)):
+                flo = torch.cat([ratio*output2*temp_m,ratio*output3*temp_m],dim=1)
+                temp = self.warp(output1*temp_m,flo)
                 input_feature1.append(temp)
             
             input_feature1 = torch.cat(input_feature1,dim=1)
+            input_feature1 = input_feature1 + current_hrnet_feature1
+            input_feature1 = self.bn_1(input_feature1) 
+    
+             # 과거1 -> 미래2
+            ratio = (1/3)**(1/2)
     
             input_feature2 = []
-            for output1,output2,output3 in zip(previous_hrnet_feature2.split(1, dim=1),pc_u1_2.split(1, dim=1),pc_u2_2.split(1, dim=1)):
-                flo2 = torch.cat([output2,output3],dim=1)
-                temp2 = self.warp(output1,flo2)
+            for temp_m,output1,output2,output3 in zip(pn_mask_2.split(1, dim=1),previous_hrnet_feature2.split(1, dim=1),pc_u1_2.split(1, dim=1),pc_u2_2.split(1, dim=1)):
+                flo2 = torch.cat([ratio*output2*temp_m,ratio*output3*temp_m],dim=1)
+                temp2 = self.warp(output1*temp_m,flo2)
                 input_feature2.append(temp2)
             
             input_feature2 = torch.cat(input_feature2,dim=1)
+            input_feature2 = input_feature2 + current_hrnet_feature2
+            input_feature2 = self.bn_2(input_feature2) 
+            
+            # 과거2 -> 미래1
+            ratio = (2/3)**(1/2)
             
             input_feature3 = []
-            for output1,output2,output3 in zip(previous_hrnet_feature3.split(1, dim=1),pc_u1_3.split(1, dim=1),pc_u2_3.split(1, dim=1)):
-                flo3 = torch.cat([output2,output3],dim=1)
-                temp3 = self.warp(output1,flo3)
+            for temp_m,output1,output2,output3 in zip(pn_mask_3.split(1, dim=1),previous_hrnet_feature3.split(1, dim=1),pc_u1_3.split(1, dim=1),pc_u2_3.split(1, dim=1)):
+                flo3 = torch.cat([ratio*output2*temp_m,ratio*output3*temp_m],dim=1)
+                temp3 = self.warp(output1*temp_m,flo3)
                 input_feature3.append(temp3)
             
-            input_feature3 = torch.cat(input_feature3,dim=1)     
+            input_feature3 = torch.cat(input_feature3,dim=1) 
+            input_feature3 = input_feature3 + current_hrnet_feature3    
+            input_feature3 = self.bn_3(input_feature3) 
+            
+            # 과거2 -> 미래2
+            ratio = (1/2)**(1/2)
             
             input_feature4 = []
-            for output1,output2,output3 in zip(previous_hrnet_feature4.split(1, dim=1),pc_u1_4.split(1, dim=1),pc_u2_4.split(1, dim=1)):
-                flo4 = torch.cat([output2,output3],dim=1)
-                temp4 = self.warp(output1,flo4)
+            for temp_m,output1,output2,output3 in zip(pn_mask_4.split(1, dim=1),previous_hrnet_feature4.split(1, dim=1),pc_u1_4.split(1, dim=1),pc_u2_4.split(1, dim=1)):
+                flo4 = torch.cat([ratio*output2*temp_m,ratio*output3*temp_m],dim=1)
+                temp4 = self.warp(output1*temp_m,flo4)
                 input_feature4.append(temp4)
             
-            input_feature4 = torch.cat(input_feature4,dim=1)                     
+            input_feature4 = torch.cat(input_feature4,dim=1)     
+            input_feature4 = input_feature4 + current_hrnet_feature4 
+            input_feature4 = self.bn_4(input_feature4)               
                    
 
 
@@ -291,7 +352,7 @@ class DcPose_RSN(BaseModel):
         stage4_2_input.append(input_feature3)
         stage4_2_input.append(input_feature4)
 
-        pre1_motion_heatmap = self.rough_pose_estimation_net.stage4_forward(stage4_2_input)
+        motion_heatmap = self.rough_pose_estimation_net.stage4_2_forward(stage4_2_input)
 
         '''
         prev_next_heatmaps = torch.cat([pre_motion_heatmap, next_motion_heatmap], dim=1)
@@ -359,13 +420,15 @@ class DcPose_RSN(BaseModel):
         else:
             return output_heatmaps, current_rough_heatmaps,pre_motion_heatmap, next_motion_heatmap 
         '''
-        return pre1_motion_heatmap, current_rough_heatmaps, previous_rough_heatmaps
+        return motion_heatmap, current_rough_heatmaps, previous_rough_heatmaps
 
     def init_weights(self):
         logger = logging.getLogger(__name__)
         ## init_weights
         rough_pose_estimation_name_set = set()
+        rough_pose_stage4_2_set = set()
         for module_name, module in self.named_modules():
+        
             # rough_pose_estimation_net 单独判断一下
             if module_name.split('.')[0] == "rough_pose_estimation_net":
                 rough_pose_estimation_name_set.add(module_name)
@@ -445,6 +508,19 @@ class DcPose_RSN(BaseModel):
                         # logger.info('=> init {} from {}'.format(name, pretrained))
                         print('=> init {}'.format(name))
                         need_init_state_dict[name] = m  
+                        
+                ## stage4_2 분기하는 기존 stage4의 weight값을 불러올 수 있도록 세팅하는 부분이다.         
+                if name.split('.')[0] == "rough_pose_estimation_net":
+                    if name.split('.')[1] == "stage4":
+                        new_name = name.split('.')
+                        new_name[1] = "stage4_2"
+                        layer_name = '.'.join(new_name)
+                        need_init_state_dict[layer_name] = m
+                    if name.split('.')[1] == "final_layer":
+                        new_name = name.split('.')
+                        new_name[1] = "final_layer_2"
+                        layer_name = '.'.join(new_name)
+                        need_init_state_dict[layer_name] = m                        
             self.load_state_dict(need_init_state_dict, strict=False)
             
             
