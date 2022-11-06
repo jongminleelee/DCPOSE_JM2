@@ -149,9 +149,9 @@ class CommonFunction(BaseFunction):
                       'Speed {speed:.1f} samples/s\t' \
                       'Data {data_time.val:.3f}s ({data_time.avg:.3f}s)\t' \
                       'Loss {loss.val:.5f} ({loss.avg:.5f})\t' \
-                      'pre_final_acc {acc.val:.3f} ({acc.avg:.3f})\t'\
-                      'c_acc {acc2.val:.3f} ({acc2.avg:.3f})\t'\
-                      'pre_acc {acc3.val:.3f} ({acc3.avg:.3f})\t'.format(epoch, iter_step, self.max_iter_num, batch_time=batch_time,
+                      'final_acc {acc.val:.3f} ({acc.avg:.3f})\t'\
+                      'add_acc {acc2.val:.3f} ({acc2.avg:.3f})\t'\
+                      'c_acc {acc3.val:.3f} ({acc3.avg:.3f})\t'.format(epoch, iter_step, self.max_iter_num, batch_time=batch_time,
                                                                         speed=input_x.size(0) / batch_time.val,
                                                                         data_time=data_time, loss=losses, acc=acc, acc2=acc2, acc3=acc3)
                       #

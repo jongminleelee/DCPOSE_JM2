@@ -88,13 +88,12 @@ class DcPose_RSN(BaseModel):
 
         assert self.use_prf and self.use_ptm and self.use_pcn and self.use_margin and self.use_margin and self.use_group
 
-        prf_ptm_combine_ch = prf_inner_ch + ptm_inner_ch
+        #prf_ptm_combine_ch = prf_inner_ch + ptm_inner_ch
 
         ####### PTM #######
         if ptm_basicblock_num > 0:
 
-            self.support_temporal_fuse = CHAIN_RSB_BLOCKS(self.num_joints * 5, ptm_inner_ch, ptm_basicblock_num,
-                                                          )
+            self.support_temporal_fuse = CHAIN_RSB_BLOCKS(self.num_joints * 5, ptm_inner_ch, ptm_basicblock_num,)
 
             # self.support_temporal_fuse = ChainOfBasicBlocks(self.num_joints * 3, ptm_inner_ch, 1, 1, 2,
             #                                                 ptm_basicblock_num, groups=self.num_joints)
@@ -102,13 +101,11 @@ class DcPose_RSN(BaseModel):
             self.support_temporal_fuse = nn.Conv2d(self.num_joints * 5, ptm_inner_ch, kernel_size=3, padding=1,
                                                    groups=self.num_joints)
 
-        self.offset_mask_combine_conv = CHAIN_RSB_BLOCKS(prf_ptm_combine_ch, prf_ptm_combine_inner_ch,
-                                                         prf_ptm_combine_basicblock_num)
-        # self.offset_mask_combine_conv = ChainOfBasicBlocks(prf_ptm_combine_ch, prf_ptm_combine_inner_ch, 1, 1, 2,
-        #                                                    prf_ptm_combine_basicblock_num)
+        prf_ptm_combine_ch = self.num_joints * 2
+
+        self.offset_mask_combine_conv = CHAIN_RSB_BLOCKS(prf_ptm_combine_ch, prf_ptm_combine_inner_ch, prf_ptm_combine_basicblock_num)
 
         ####### PCN #######
-        # self.offsets_list, self.masks_list, self.modulated_deform_conv_list, self.modulated_deform_conv_list2, self.modulated_deform_conv_list3 = [], [], [], [], []
         self.offsets_list, self.masks_list, self.modulated_deform_conv_list = [], [], []
         for d_index, dilation in enumerate(self.deformable_conv_dilations):
             # offsets
@@ -118,26 +115,26 @@ class DcPose_RSN(BaseModel):
             self.offsets_list.append(nn.Sequential(*offset_layers))
             self.masks_list.append(nn.Sequential(*mask_layers))
             self.modulated_deform_conv_list.append(DeformableCONV(self.num_joints, k, dilation))
-            # self.modulated_deform_conv_list2.append(DeformableCONV(self.num_joints, k, dilation))
-            # self.modulated_deform_conv_list3.append(DeformableCONV(self.num_joints, k, dilation))
 
         self.offsets_list = nn.ModuleList(self.offsets_list)
         self.masks_list = nn.ModuleList(self.masks_list)
         self.modulated_deform_conv_list = nn.ModuleList(self.modulated_deform_conv_list)
-        # self.modulated_deform_conv_list2 = nn.ModuleList(self.modulated_deform_conv_list2)
-        # self.modulated_deform_conv_list3 = nn.ModuleList(self.modulated_deform_conv_list3)
 
-        self.motion_layer_48 = FlowLayer(48, self.batch_size, 20)
-        self.motion_layer_96 = FlowLayer(96, self.batch_size, 20)
-        self.motion_layer_192 = FlowLayer(192, self.batch_size, 20)
-        self.motion_layer_384 = FlowLayer(384, self.batch_size, 20)
+
+
+        self.motion_layer_17 = FlowLayer(17, self.batch_size, 20)
+        #self.motion_layer_48 = FlowLayer(48, self.batch_size, 20)
+        #self.motion_layer_96 = FlowLayer(96, self.batch_size, 20)
+        #self.motion_layer_192 = FlowLayer(192, self.batch_size, 20)
+        #self.motion_layer_384 = FlowLayer(384, self.batch_size, 20)
         
         BN_MOMENTUM = 0.1
 
-        self.bn_1 = nn.BatchNorm2d(48, momentum=BN_MOMENTUM)
-        self.bn_2 = nn.BatchNorm2d(96, momentum=BN_MOMENTUM)
-        self.bn_3 = nn.BatchNorm2d(192, momentum=BN_MOMENTUM)
-        self.bn_4 = nn.BatchNorm2d(384, momentum=BN_MOMENTUM)        
+        #self.bn_0 = nn.BatchNorm2d(48, momentum=BN_MOMENTUM)
+        #self.bn_1 = nn.BatchNorm2d(48, momentum=BN_MOMENTUM)
+        #self.bn_2 = nn.BatchNorm2d(96, momentum=BN_MOMENTUM)
+        #self.bn_3 = nn.BatchNorm2d(192, momentum=BN_MOMENTUM)
+        #self.bn_4 = nn.BatchNorm2d(384, momentum=BN_MOMENTUM)        
 
         #self.past_output_layer = CHAIN_RSB_BLOCKS(self.num_joints * 3, self.num_joints, 1)
         #self.next_output_layer = CHAIN_RSB_BLOCKS(self.num_joints * 3, self.num_joints, 1)
@@ -223,14 +220,111 @@ class DcPose_RSN(BaseModel):
         
         current_rough_heatmaps, previous_rough_heatmaps, next_rough_heatmaps, previous2_rough_heatmaps, next2_rough_heatmaps = rough_heatmap.split(true_batch_size, dim=0)
 
-        current_hrnet_feature1, previous_hrnet_feature1, next_hrnet_feature1, previous2_hrnet_feature1, next2_hrnet_feature1 = feature1.split(true_batch_size, dim=0)
-        current_hrnet_feature2, previous_hrnet_feature2, next_hrnet_feature2, previous2_hrnet_feature2, next2_hrnet_feature2 = feature2.split(true_batch_size, dim=0)
-        current_hrnet_feature3, previous_hrnet_feature3, next_hrnet_feature3, previous2_hrnet_feature3, next2_hrnet_feature3 = feature3.split(true_batch_size, dim=0)
-        current_hrnet_feature4, previous_hrnet_feature4, next_hrnet_feature4, previous2_hrnet_feature4, next2_hrnet_feature4 = feature4.split(true_batch_size, dim=0)
+        #current_hrnet_feature1, previous_hrnet_feature1, next_hrnet_feature1, previous2_hrnet_feature1, next2_hrnet_feature1 = feature1.split(true_batch_size, dim=0)
+        #current_hrnet_feature2, previous_hrnet_feature2, next_hrnet_feature2, previous2_hrnet_feature2, next2_hrnet_feature2 = feature2.split(true_batch_size, dim=0)
+        #current_hrnet_feature3, previous_hrnet_feature3, next_hrnet_feature3, previous2_hrnet_feature3, next2_hrnet_feature3 = feature3.split(true_batch_size, dim=0)
+        #current_hrnet_feature4, previous_hrnet_feature4, next_hrnet_feature4, previous2_hrnet_feature4, next2_hrnet_feature4 = feature4.split(true_batch_size, dim=0)
 
         # motion_module_flowlayer
         # [b, 48, 96, 72] == [b, 48, h, w]
         with torch.no_grad():
+            # 과거1 -> 미래1
+            # ratio 1/2 
+            
+            pc_u1_1,pc_u2_1 = self.motion_layer_17(previous_rough_heatmaps, next_rough_heatmaps)
+            temp_mag= torch.sqrt(pc_u1_1*pc_u1_1+pc_u2_1*pc_u2_1)
+            temp_mask = temp_mag<0.5
+            
+            pn_mask_1 = (torch.ones(temp_mag.size())).cuda()
+            pn_mask_1[temp_mask] = 0
+            
+            # 과거1 -> 미래2 
+            # ratio 1/3         
+            
+            pc_u1_2,pc_u2_2 = self.motion_layer_17(previous_rough_heatmaps, next2_rough_heatmaps)
+            temp_mag= torch.sqrt(pc_u1_2*pc_u1_2+pc_u2_2*pc_u2_2)
+            temp_mask = temp_mag<0.5
+            
+            pn_mask_2 = (torch.ones(temp_mag.size())).cuda()
+            pn_mask_2[temp_mask] = 0            
+            
+            
+            # 과거2 -> 미래1 
+            # ratio 2/3 
+            
+            pc_u1_3,pc_u2_3 = self.motion_layer_17(previous2_rough_heatmaps, next_rough_heatmaps)
+            temp_mag= torch.sqrt(pc_u1_3*pc_u1_3+pc_u2_3*pc_u2_3)
+            temp_mask = temp_mag<0.5
+            
+            pn_mask_3 = (torch.ones(temp_mag.size())).cuda()
+            pn_mask_3[temp_mask] = 0   
+            
+            
+            # 과거2 -> 미래2 
+            # ratio 1/2 
+            
+            pc_u1_4,pc_u2_4 = self.motion_layer_17(previous2_rough_heatmaps, next2_rough_heatmaps)        
+            
+            temp_mag= torch.sqrt(pc_u1_4*pc_u1_4+pc_u2_4*pc_u2_4)
+            temp_mask = temp_mag<0.5
+            
+            pn_mask_4 = (torch.ones(temp_mag.size())).cuda()
+            pn_mask_4[temp_mask] = 0           
+            
+            
+            # =======================================================================================
+
+             # 과거1 -> 미래1
+            ratio = (1/2)**(1/2)
+            
+            input_feature1 = []
+            for temp_m,output1,output2,output3 in zip(pn_mask_1.split(1, dim=1),previous_rough_heatmaps.split(1, dim=1),pc_u1_1.split(1, dim=1),pc_u2_1.split(1, dim=1)):
+                flo = torch.cat([ratio*output2*temp_m,ratio*output3*temp_m],dim=1)
+                temp = self.warp(output1*temp_m,flo)
+                input_feature1.append(temp)
+            
+            input_feature1 = torch.cat(input_feature1,dim=1)
+    
+             # 과거1 -> 미래2
+            ratio = (1/3)**(1/2)
+    
+            input_feature2 = []
+            for temp_m,output1,output2,output3 in zip(pn_mask_2.split(1, dim=1),previous_rough_heatmaps.split(1, dim=1),pc_u1_2.split(1, dim=1),pc_u2_2.split(1, dim=1)):
+                flo2 = torch.cat([ratio*output2*temp_m,ratio*output3*temp_m],dim=1)
+                temp2 = self.warp(output1*temp_m,flo2)
+                input_feature2.append(temp2)
+            
+            input_feature2 = torch.cat(input_feature2,dim=1)
+            
+            # 과거2 -> 미래1
+            ratio = (2/3)**(1/2)
+            
+            input_feature3 = []
+            for temp_m,output1,output2,output3 in zip(pn_mask_3.split(1, dim=1),previous2_rough_heatmaps.split(1, dim=1),pc_u1_3.split(1, dim=1),pc_u2_3.split(1, dim=1)):
+                flo3 = torch.cat([ratio*output2*temp_m,ratio*output3*temp_m],dim=1)
+                temp3 = self.warp(output1*temp_m,flo3)
+                input_feature3.append(temp3)
+            
+            input_feature3 = torch.cat(input_feature3,dim=1) 
+            
+            # 과거2 -> 미래2
+            ratio = (1/2)**(1/2)
+            
+            input_feature4 = []
+            for temp_m,output1,output2,output3 in zip(pn_mask_4.split(1, dim=1),previous2_rough_heatmaps.split(1, dim=1),pc_u1_4.split(1, dim=1),pc_u2_4.split(1, dim=1)):
+                flo4 = torch.cat([ratio*output2*temp_m,ratio*output3*temp_m],dim=1)
+                temp4 = self.warp(output1*temp_m,flo4)
+                input_feature4.append(temp4)
+            
+            input_feature4 = torch.cat(input_feature4,dim=1)  
+            
+            #all_output =  0.2*input_feature1 +  0.2*input_feature2 + 0.2*input_feature3 + 0.2*input_feature4 + 0.2*current_rough_heatmaps 
+            
+            all_output = input_feature1 + input_feature2 + input_feature3 + input_feature4
+            #all_output = current_rough_heatmaps + all_output
+                               
+        
+        '''
         # u1, u2 형태로 값이 나오도록 수정
         # 현재 -> 미래 or 현재 -> 과거가 아니라
         # 과거 -> 현재 or 미래 -> 현재 형태로 수정을 함. 
@@ -354,58 +448,36 @@ class DcPose_RSN(BaseModel):
 
         motion_heatmap = self.rough_pose_estimation_net.stage4_2_forward(stage4_2_input)
 
+
         '''
-        prev_next_heatmaps = torch.cat([pre_motion_heatmap, next_motion_heatmap], dim=1)
+        ##========================================================================================================
 
-        # hrnet + posetrack2018기반으로 fintuning pretrained된 값을 사용 
-        # validation 80 정도의 값을 가지고 있음.
-        current_rough_heatmaps_list = current_rough_heatmaps.split(1, dim=1)
-        previous_rough_heatmaps_list = previous_rough_heatmaps.split(1, dim=1)
-        next_rough_heatmaps_list = next_rough_heatmaps.split(1, dim=1)
-        previous2_rough_heatmaps_list = previous2_rough_heatmaps.split(1, dim=1)
-        next2_rough_heatmaps_list = next2_rough_heatmaps.split(1, dim=1)
 
-        temp_support_fuse_list = []
-        for joint_index in range(self.num_joints):
-            temp_support_fuse_list.append(current_rough_heatmaps_list[joint_index])
-            temp_support_fuse_list.append(previous_rough_heatmaps_list[joint_index]*0.5)
-            temp_support_fuse_list.append(next_rough_heatmaps_list[joint_index]*0.5)
-            temp_support_fuse_list.append(previous2_rough_heatmaps_list[joint_index]*0.5)
-            temp_support_fuse_list.append(next2_rough_heatmaps_list[joint_index]*0.5)
+
+        temp_support_fuse_list = [current_rough_heatmaps, 0.5*previous_rough_heatmaps, 0.5*next_rough_heatmaps, 0.25*previous2_rough_heatmaps, 0.25*next2_rough_heatmaps]
 
         support_heatmaps = torch.cat(temp_support_fuse_list, dim=1)
-
-        # self.support_temporal_fuse = CHAIN_RSB_BLOCKS(self.num_joints * 3, ptm_inner_ch, ptm_basicblock_num,)
-        # 해당 위 layer는 3*3 stack layer 부분이다.
-        # 이 때 왜? ptm의 결과를
+        
+        # 입력채널 17*5 = 85채널 
+        # 아웃풋 채널 17채
         support_heatmaps = self.support_temporal_fuse(support_heatmaps).cuda()
 
-        # 3*3 conv stack conv 처리 !!
-        prev_next_combine_featuremaps = self.offset_mask_combine_conv(torch.cat([prev_next_heatmaps, support_heatmaps], dim=1))
 
-        # DEFORMABLE_CONV:
-        # DILATION:
-        # - 3
-        # - 6
-        # - 9
-        # - 12
-        # - 15
+        # all_output = 17채널
+        # support_heatmaps = 17채널 
+        prf_ptm_combine_featuremaps = self.offset_mask_combine_conv(torch.cat([all_output, support_heatmaps], dim=1))
 
         warped_heatmaps_list = []
         for d_index, dilation in enumerate(self.deformable_conv_dilations):
-            offsets = self.offsets_list[d_index](prev_next_combine_featuremaps)
-            masks = self.masks_list[d_index](prev_next_combine_featuremaps)
+            offsets = self.offsets_list[d_index](prf_ptm_combine_featuremaps)
+            masks = self.masks_list[d_index](prf_ptm_combine_featuremaps)
 
-            warped_heatmaps1 = self.modulated_deform_conv_list[d_index](support_heatmaps, offsets, masks)
-            # warped_heatmaps2 = self.modulated_deform_conv_list2[d_index](prev_heatmaps, offsets, masks)
-            # warped_heatmaps3 = self.modulated_deform_conv_list3[d_index](next_heatmaps, offsets, masks)
-            warped_heatmaps_list.append(warped_heatmaps1)
-            # warped_heatmaps_list.append(warped_heatmaps2)
-            # warped_heatmaps_list.append(warped_heatmaps3)
+            warped_heatmaps = self.modulated_deform_conv_list[d_index](support_heatmaps, offsets, masks)
+
+            warped_heatmaps_list.append(warped_heatmaps)
 
         if self.deformable_aggregation_type == "weighted_sum":
 
-            # 5개의 dilations가 있기 때문에 해당 부분을 균등하게 1/5 씩 weight값을 부여함.
             warper_weight = 1 / len(self.deformable_conv_dilations)
             output_heatmaps = warper_weight * warped_heatmaps_list[0]
             for warper_heatmaps in warped_heatmaps_list[1:]:
@@ -418,9 +490,11 @@ class DcPose_RSN(BaseModel):
         if not self.freeze_hrnet_weights:
             return current_rough_heatmaps, output_heatmaps
         else:
-            return output_heatmaps, current_rough_heatmaps,pre_motion_heatmap, next_motion_heatmap 
-        '''
-        return motion_heatmap, current_rough_heatmaps, previous_rough_heatmaps
+            return output_heatmaps, all_output, current_rough_heatmaps
+
+
+
+        #return motion_heatmap, current_rough_heatmaps, previous_rough_heatmaps
 
     def init_weights(self):
         logger = logging.getLogger(__name__)
