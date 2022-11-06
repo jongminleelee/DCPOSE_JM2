@@ -227,6 +227,10 @@ class DcPose_RSN(BaseModel):
 
         # motion_module_flowlayer
         # [b, 48, 96, 72] == [b, 48, h, w]
+        
+        
+        '''
+        
         with torch.no_grad():
             # 과거1 -> 미래1
             # ratio 1/2 
@@ -322,6 +326,18 @@ class DcPose_RSN(BaseModel):
             
             all_output = input_feature1 + input_feature2 + input_feature3 + input_feature4
             #all_output = current_rough_heatmaps + all_output
+            
+            
+        '''
+                      
+        #current_rough_heatmaps, previous_rough_heatmaps, next_rough_heatmaps, previous2_rough_heatmaps, next2_rough_heatmaps
+        
+        inter_p1_n1 = previous_rough_heatmaps*next_rough_heatmaps
+        inter_p1_n2 = previous_rough_heatmaps*next2_rough_heatmaps
+        inter_p2_n1 = previous2_rough_heatmaps*next_rough_heatmaps
+        inter_p2_n2 = previous2_rough_heatmaps*next2_rough_heatmaps
+        
+        inter_all = inter_p1_n1 + inter_p1_n2 + inter_p2_n1 + inter_p2_n2 #+ current_rough_heatmaps
                                
         
         '''
@@ -465,7 +481,7 @@ class DcPose_RSN(BaseModel):
 
         # all_output = 17채널
         # support_heatmaps = 17채널 
-        prf_ptm_combine_featuremaps = self.offset_mask_combine_conv(torch.cat([all_output, support_heatmaps], dim=1))
+        prf_ptm_combine_featuremaps = self.offset_mask_combine_conv(torch.cat([inter_all, support_heatmaps], dim=1))
 
         warped_heatmaps_list = []
         for d_index, dilation in enumerate(self.deformable_conv_dilations):
@@ -490,7 +506,7 @@ class DcPose_RSN(BaseModel):
         if not self.freeze_hrnet_weights:
             return current_rough_heatmaps, output_heatmaps
         else:
-            return output_heatmaps, all_output, current_rough_heatmaps
+            return output_heatmaps, inter_all, current_rough_heatmaps
 
 
 
