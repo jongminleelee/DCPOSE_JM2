@@ -471,8 +471,8 @@ class DcPose_RSN(BaseModel):
         '''
         ##========================================================================================================
 
-        occulusion_heatmap = torch.cat([all_inter,all_output,0.5*all_inter+0.5*all_output], dim=1)
-        occulusion_heatmap = self.occulusion_conv(occulusion_heatmap).cuda()
+        occulusion_heatmap = all_inter + all_output
+        #occulusion_heatmap = self.occulusion_conv(occulusion_heatmap).cuda()
         
 
         temp_support_fuse_list = [current_rough_heatmaps, 0.5*previous_rough_heatmaps, 0.5*next_rough_heatmaps, 0.25*previous2_rough_heatmaps, 0.25*next2_rough_heatmaps]
