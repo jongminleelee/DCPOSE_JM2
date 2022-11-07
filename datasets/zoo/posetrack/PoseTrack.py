@@ -106,14 +106,14 @@ class PoseTrack(VideoDataset):
         num_frames = data_item['nframes']
         data_numpy = read_image(image_file_path)
 
-        #prev_optical_root_path = "/mnt/prj/inpyosong/posetrack2018/posetrack2018_opt_cp2"
-        #next_optical_root_path = "/mnt/prj/inpyosong/posetrack2018/posetrack2018_opt_cn2"
-        #prev_2_optical_root_path = "/mnt/prj/inpyosong/posetrack2018/posetrack2018_opt_cp"
-        #next_2_optical_root_path = "/mnt/prj/inpyosong/posetrack2018/posetrack2018_opt_cn"
-        prev_2_optical_root_path = "/home/dataset/posetrack/posetrack2018_opt_cp"
-        next_2_optical_root_path = "/home/dataset/posetrack/posetrack2018_opt_cn"
-        prev_optical_root_path = "/home/dataset/posetrack/posetrack2018_opt_cp2"
-        next_optical_root_path = "/home/dataset/posetrack/posetrack2018_opt_cn2"
+        prev_optical_root_path = "/mnt/prj/inpyosong/posetrack2018/posetrack2018_opt_cp2"
+        next_optical_root_path = "/mnt/prj/inpyosong/posetrack2018/posetrack2018_opt_cn2"
+        prev_2_optical_root_path = "/mnt/prj/inpyosong/posetrack2018/posetrack2018_opt_cp"
+        next_2_optical_root_path = "/mnt/prj/inpyosong/posetrack2018/posetrack2018_opt_cn"
+        #prev_2_optical_root_path = "/home/dataset/posetrack/posetrack2018_opt_cp"
+        #next_2_optical_root_path = "/home/dataset/posetrack/posetrack2018_opt_cn"
+        #prev_optical_root_path = "/home/dataset/posetrack/posetrack2018_opt_cp2"
+        #next_optical_root_path = "/home/dataset/posetrack/posetrack2018_opt_cn2"
 
         if self.train:
             origin_path = image_file_path
