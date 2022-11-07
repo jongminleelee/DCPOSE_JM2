@@ -511,7 +511,7 @@ class DcPose_RSN(BaseModel):
         if not self.freeze_hrnet_weights:
             return current_rough_heatmaps, output_heatmaps
         else:
-            return output_heatmaps, occulusion_heatmap, current_rough_heatmaps
+            return output_heatmaps, occulusion_heatmap, all_inter
 
 
 
